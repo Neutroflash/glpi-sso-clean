@@ -1,0 +1,25 @@
+{
+  "realm": "glpi",
+  "enabled": true,
+  "displayName": "GLPI",
+  "clients": [
+    {
+      "clientId": "glpi-proxy",
+      "protocol": "openid-connect",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "CHANGE-ME-GLPI-PROXY-SECRET",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost/oauth2/callback"
+      ],
+      "webOrigins": [
+        "http://localhost"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "+"
+      }
+    }
+  ]
+}
