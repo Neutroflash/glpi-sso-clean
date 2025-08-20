@@ -1,0 +1,185 @@
+# Global configuration
+global:
+  environment: production
+  domain: localhost
+
+# GLPI Application Configuration
+glpi:
+  enabled: true
+  image:
+    repository: glpi/glpi
+    tag: "10.0.19"
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 1
+  
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
+      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
+    hosts:
+      - host: glpi.localhost
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+  
+  env:
+    GLPI_SKIP_AUTOINSTALL: "true"
+    GLPI_INSTALL_AUTO: "0"
+    # Database configuration will be injected from MySQL service
+    MYSQL_HOST: "mysql"
+    MYSQL_PORT: "3306"
+    MYSQL_DATABASE: "glpi"
+    MYSQL_USER: "glpi"
+    MYSQL_PASSWORD: "glpi_password"
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# MySQL Database Configuration
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "root_password"
+    database: "glpi"
+    username: "glpi"
+    password: "glpi_password"
+  
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 8Gi
+    
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 500m
+        memory: 512Mi
+
+# Keycloak SSO Configuration
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    adminPassword: "admin_password"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: keycloak.localhost
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  postgresql:
+    enabled: false  # We'll use the built-in H2 database for simplicity
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 8Gi
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+
+# OAuth2-Proxy Configuration
+oauth2-proxy:
+  enabled: true
+  image:
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: "v7.11.0"
+  
+  config:
+    clientID: "glpi-proxy"
+    clientSecret: "CHANGE-ME-GLPI-PROXY-SECRET"
+    cookieSecret: "GOG97zh0RM5XN8mS2EMCQ6bQadARKGD8"
+    configFile: |-
+      email_domains = [ "*" ]
+      upstreams = [ "http://glpi.default.svc.cluster.local:80" ]
+      http_address = "0.0.0.0:4180"
+      provider = "oidc"
+      oidc_issuer_url = "http://keycloak.default.svc.cluster.local:8080/realms/glpi"
+      skip_oidc_discovery = true
+      oidc_jwks_url = "http://keycloak.default.svc.cluster.local:8080/realms/glpi/protocol/openid-connect/certs"
+      redeem_url = "http://keycloak.default.svc.cluster.local:8080/realms/glpi/protocol/openid-connect/token"
+      profile_url = "http://keycloak.default.svc.cluster.local:8080/realms/glpi/protocol/openid-connect/userinfo"
+      scope = "openid profile email"
+      cookie_secure = false
+      cookie_samesite = "lax"
+      pass_user_headers = true
+      set_xauthrequest = true
+      skip_provider_button = true
+      reverse_proxy = true
+      skip_auth_routes = "/front/helpdesk.public.php,/front/login.php"
+      pass_id_token = false
+  
+  service:
+    type: ClusterIP
+    port: 4180
+    targetPort: 4180
+  
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: glpi.localhost
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+    tls: []
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# Nginx Ingress Controller (optional - for external access)
+nginx-ingress:
+  enabled: false  # Set to true if you want to deploy nginx-ingress as part of this chart
+  controller:
+    service:
+      type: LoadBalancer
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi

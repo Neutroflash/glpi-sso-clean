@@ -1,0 +1,18 @@
+{{- if and .Values.glpi.enabled .Values.glpi.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-glpi
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: glpi
+spec:
+  accessModes:
+    - {{ .Values.glpi.persistence.accessMode | quote }}
+  {{- if .Values.glpi.persistence.storageClass }}
+  storageClassName: {{ .Values.glpi.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.glpi.persistence.size | quote }}
+{{- end }}

@@ -1,0 +1,36 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-keycloak-realm
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+data:
+  glpi-realm.json: |
+    {
+      "realm": "glpi",
+      "enabled": true,
+      "displayName": "GLPI",
+      "clients": [
+        {
+          "clientId": "glpi-proxy",
+          "protocol": "openid-connect",
+          "enabled": true,
+          "publicClient": false,
+          "secret": "{{ .Values.oauth2-proxy.config.clientSecret }}",
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": false,
+          "redirectUris": [
+            "http://{{ .Values.global.domain }}/oauth2/callback"
+          ],
+          "webOrigins": [
+            "http://{{ .Values.global.domain }}"
+          ],
+          "attributes": {
+            "post.logout.redirect.uris": "+"
+          }
+        }
+      ]
+    }
+{{- end }}

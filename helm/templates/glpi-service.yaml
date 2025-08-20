@@ -1,0 +1,19 @@
+{{- if .Values.glpi.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-glpi
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: glpi
+spec:
+  type: {{ .Values.glpi.service.type }}
+  ports:
+    - port: {{ .Values.glpi.service.port }}
+      targetPort: {{ .Values.glpi.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "glpi-sso.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: glpi
+{{- end }}

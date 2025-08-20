@@ -1,0 +1,52 @@
+{{- if .Values.oauth2-proxy.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-oauth2-proxy
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oauth2-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "glpi-sso.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        {{- include "glpi-sso.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: "{{ .Values.oauth2-proxy.image.repository }}:{{ .Values.oauth2-proxy.image.tag }}"
+          args:
+            - --config=/etc/oauth2-proxy/oauth2-proxy.conf
+          ports:
+            - name: http
+              containerPort: 4180
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.oauth2-proxy.resources | nindent 12 }}
+          volumeMounts:
+            - name: oauth2-proxy-config
+              mountPath: /etc/oauth2-proxy
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: oauth2-proxy-config
+          configMap:
+            name: {{ include "glpi-sso.fullname" . }}-oauth2-proxy-config
+{{- end }}

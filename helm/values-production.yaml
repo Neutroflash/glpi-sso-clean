@@ -1,0 +1,142 @@
+# Production configuration for GLPI SSO
+global:
+  environment: production
+  domain: your-domain.com
+
+# GLPI Configuration
+glpi:
+  enabled: true
+  image:
+    repository: glpi/glpi
+    tag: "10.0.19"
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 2  # Multiple replicas for high availability
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "https://$host/oauth2/start?rd=$escaped_request_uri"
+      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: glpi.your-domain.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: glpi-tls
+        hosts:
+          - glpi.your-domain.com
+  
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"  # Use appropriate storage class
+    accessMode: ReadWriteOnce
+    size: 20Gi
+  
+  env:
+    GLPI_SKIP_AUTOINSTALL: "true"
+    GLPI_INSTALL_AUTO: "0"
+    MYSQL_HOST: "mysql"
+    MYSQL_PORT: "3306"
+    MYSQL_DATABASE: "glpi"
+    MYSQL_USER: "glpi"
+    MYSQL_PASSWORD: "CHANGE_ME_SECURE_PASSWORD"
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# MySQL Configuration
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "CHANGE_ME_SECURE_ROOT_PASSWORD"
+    database: "glpi"
+    username: "glpi"
+    password: "CHANGE_ME_SECURE_PASSWORD"
+  
+  primary:
+    persistence:
+      enabled: true
+      storageClass: "fast-ssd"
+      size: 50Gi
+    
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 2Gi
+      requests:
+        cpu: 1000m
+        memory: 1Gi
+
+# Keycloak Configuration
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    adminPassword: "CHANGE_ME_SECURE_ADMIN_PASSWORD"
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    hosts:
+      - host: keycloak.your-domain.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: keycloak-tls
+        hosts:
+          - keycloak.your-domain.com
+  
+  persistence:
+    enabled: true
+    storageClass: "fast-ssd"
+    size: 20Gi
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi
+
+# OAuth2-Proxy Configuration
+oauth2-proxy:
+  enabled: true
+  image:
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: "v7.11.0"
+  
+  config:
+    clientID: "glpi-proxy"
+    clientSecret: "CHANGE_ME_SECURE_CLIENT_SECRET"
+    cookieSecret: "CHANGE_ME_SECURE_COOKIE_SECRET"
+  
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: glpi.your-domain.com
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi

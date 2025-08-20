@@ -1,0 +1,69 @@
+{{- if .Values.glpi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-glpi
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: glpi
+spec:
+  replicas: {{ .Values.glpi.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "glpi-sso.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: glpi
+  template:
+    metadata:
+      labels:
+        {{- include "glpi-sso.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: glpi
+    spec:
+      containers:
+        - name: glpi
+          image: "{{ .Values.glpi.image.repository }}:{{ .Values.glpi.image.tag }}"
+          imagePullPolicy: {{ .Values.glpi.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: GLPI_SKIP_AUTOINSTALL
+              value: {{ .Values.glpi.env.GLPI_SKIP_AUTOINSTALL | quote }}
+            - name: GLPI_INSTALL_AUTO
+              value: {{ .Values.glpi.env.GLPI_INSTALL_AUTO | quote }}
+            - name: MYSQL_HOST
+              value: {{ .Values.glpi.env.MYSQL_HOST | quote }}
+            - name: MYSQL_PORT
+              value: {{ .Values.glpi.env.MYSQL_PORT | quote }}
+            - name: MYSQL_DATABASE
+              value: {{ .Values.glpi.env.MYSQL_DATABASE | quote }}
+            - name: MYSQL_USER
+              value: {{ .Values.glpi.env.MYSQL_USER | quote }}
+            - name: MYSQL_PASSWORD
+              value: {{ .Values.glpi.env.MYSQL_PASSWORD | quote }}
+          resources:
+            {{- toYaml .Values.glpi.resources | nindent 12 }}
+          volumeMounts:
+            - name: glpi-data
+              mountPath: /var/www/html/glpi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: glpi-data
+          {{- if .Values.glpi.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "glpi-sso.fullname" . }}-glpi
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+{{- end }}

@@ -1,0 +1,42 @@
+{{- if and .Values.glpi.enabled .Values.glpi.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-glpi
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: glpi
+  {{- with .Values.glpi.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.glpi.ingress.className }}
+  ingressClassName: {{ .Values.glpi.ingress.className }}
+  {{- end }}
+  {{- if .Values.glpi.ingress.tls }}
+  tls:
+    {{- range .Values.glpi.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.glpi.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "glpi-sso.fullname" $ }}-glpi
+                port:
+                  number: {{ $.Values.glpi.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

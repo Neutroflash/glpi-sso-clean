@@ -1,0 +1,36 @@
+# Helm charts
+charts/
+*.tgz
+
+# Secrets and sensitive files
+secrets.yaml
+*-secrets.yaml
+*-secret.yaml
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+backup-*/
+*.backup
+
+# Logs
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes files
+*.kubeconfig
+kubeconfig
+
+# Helm cache
+.helm/

@@ -1,0 +1,38 @@
+{{- if and .Values.oauth2-proxy.enabled .Values.oauth2-proxy.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "glpi-sso.fullname" . }}-oauth2-proxy
+  labels:
+    {{- include "glpi-sso.labels" . | nindent 4 }}
+    app.kubernetes.io/component: oauth2-proxy
+spec:
+  {{- if .Values.oauth2-proxy.ingress.className }}
+  ingressClassName: {{ .Values.oauth2-proxy.ingress.className }}
+  {{- end }}
+  {{- if .Values.oauth2-proxy.ingress.tls }}
+  tls:
+    {{- range .Values.oauth2-proxy.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.oauth2-proxy.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "glpi-sso.fullname" $ }}-oauth2-proxy
+                port:
+                  number: {{ $.Values.oauth2-proxy.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,133 @@
+# Development configuration for GLPI SSO
+global:
+  environment: development
+  domain: localhost
+
+# GLPI Configuration
+glpi:
+  enabled: true
+  image:
+    repository: glpi/glpi
+    tag: "10.0.19"
+    pullPolicy: IfNotPresent
+  
+  replicaCount: 1
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local/oauth2/auth"
+      nginx.ingress.kubernetes.io/auth-signin: "http://$host/oauth2/start?rd=$escaped_request_uri"
+      nginx.ingress.kubernetes.io/auth-response-headers: "X-Auth-Request-User,X-Auth-Request-Email"
+    hosts:
+      - host: glpi.localhost
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 5Gi
+  
+  env:
+    GLPI_SKIP_AUTOINSTALL: "true"
+    GLPI_INSTALL_AUTO: "0"
+    MYSQL_HOST: "mysql"
+    MYSQL_PORT: "3306"
+    MYSQL_DATABASE: "glpi"
+    MYSQL_USER: "glpi"
+    MYSQL_PASSWORD: "glpi_password"
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# MySQL Configuration
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "root_password"
+    database: "glpi"
+    username: "glpi"
+    password: "glpi_password"
+  
+  primary:
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 5Gi
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
+
+# Keycloak Configuration
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    adminPassword: "admin_password"
+  
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: keycloak.localhost
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    size: 5Gi
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+# OAuth2-Proxy Configuration
+oauth2-proxy:
+  enabled: true
+  image:
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: "v7.11.0"
+  
+  config:
+    clientID: "glpi-proxy"
+    clientSecret: "CHANGE-ME-GLPI-PROXY-SECRET"
+    cookieSecret: "GOG97zh0RM5XN8mS2EMCQ6bQadARKGD8"
+  
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - host: glpi.localhost
+        paths:
+          - path: /oauth2
+            pathType: Prefix
+  
+  resources:
+    limits:
+      cpu: 250m
+      memory: 256Mi
+    requests:
+      cpu: 125m
+      memory: 128Mi
