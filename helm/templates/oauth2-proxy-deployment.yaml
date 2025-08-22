@@ -1,4 +1,5 @@
-{{- if .Values.oauth2-proxy.enabled }}
+{{- $v := .Values -}}
+  {{- if (index $v "oauth2-proxy" "enabled") }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +21,7 @@ spec:
     spec:
       containers:
         - name: oauth2-proxy
-          image: "{{ .Values.oauth2-proxy.image.repository }}:{{ .Values.oauth2-proxy.image.tag }}"
+          image: "{{ (index $v "oauth2-proxy" "image" "repository") }}:{{ (index $v "oauth2-proxy" "image" "tag") }}"
           args:
             - --config=/etc/oauth2-proxy/oauth2-proxy.conf
           ports:
@@ -28,7 +29,7 @@ spec:
               containerPort: 4180
               protocol: TCP
           resources:
-            {{- toYaml .Values.oauth2-proxy.resources | nindent 12 }}
+            {{- toYaml (index $v "oauth2-proxy" "resources") | nindent 12 }}
           volumeMounts:
             - name: oauth2-proxy-config
               mountPath: /etc/oauth2-proxy
@@ -49,4 +50,4 @@ spec:
         - name: oauth2-proxy-config
           configMap:
             name: {{ include "glpi-sso.fullname" . }}-oauth2-proxy-config
-{{- end }}
+  {{- end }}

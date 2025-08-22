@@ -1,0 +1,12 @@
+dependencies:
+- name: mysql
+  repository: https://charts.bitnami.com/bitnami
+  version: 11.1.2
+- name: keycloak
+  repository: https://charts.bitnami.com/bitnami
+  version: 21.4.1
+- name: oauth2-proxy
+  repository: https://oauth2-proxy.github.io/manifests
+  version: 7.8.3
+digest: sha256:1f99a56932700d6a11e37ea1f06fc6a0c975fa6e8f4dea0499666eec920b734a
+generated: "2025-08-21T12:27:59.796754-05:00"

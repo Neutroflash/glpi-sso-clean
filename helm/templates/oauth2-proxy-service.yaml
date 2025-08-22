@@ -1,4 +1,4 @@
-{{- if .Values.oauth2-proxy.enabled }}
+{{- if (index .Values "oauth2-proxy" "enabled") }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -7,13 +7,13 @@ metadata:
     {{- include "glpi-sso.labels" . | nindent 4 }}
     app.kubernetes.io/component: oauth2-proxy
 spec:
-  type: {{ .Values.oauth2-proxy.service.type }}
+  type: {{ (index .Values "oauth2-proxy" "service" "type") | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.oauth2-proxy.service.port }}
-      targetPort: {{ .Values.oauth2-proxy.service.targetPort }}
+    - port: {{ (index .Values "oauth2-proxy" "service" "port") | default 4180 }}
+      targetPort: {{ (index .Values "oauth2-proxy" "service" "targetPort") | default 4180 }}
       protocol: TCP
       name: http
   selector:
     {{- include "glpi-sso.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: oauth2-proxy
-{{- end }}
+  {{- end }}

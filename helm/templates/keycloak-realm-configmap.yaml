@@ -1,4 +1,5 @@
-{{- if .Values.keycloak.enabled }}
+{{- $v := .Values -}}
+  {{- if (index $v "keycloak" "enabled") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -18,14 +19,14 @@ data:
           "protocol": "openid-connect",
           "enabled": true,
           "publicClient": false,
-          "secret": "{{ .Values.oauth2-proxy.config.clientSecret }}",
+          "secret": "{{ (index $v "oauth2-proxy" "config" "clientSecret") }}",
           "standardFlowEnabled": true,
           "directAccessGrantsEnabled": false,
           "redirectUris": [
-            "http://{{ .Values.global.domain }}/oauth2/callback"
+            "http://{{ (index $v "global" "domain") }}/oauth2/callback"
           ],
           "webOrigins": [
-            "http://{{ .Values.global.domain }}"
+            "http://{{ (index $v "global" "domain") }}"
           ],
           "attributes": {
             "post.logout.redirect.uris": "+"
@@ -33,4 +34,4 @@ data:
         }
       ]
     }
-{{- end }}
+  {{- end }}

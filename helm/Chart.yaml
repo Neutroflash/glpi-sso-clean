@@ -19,14 +19,15 @@ maintainers:
     email: your.email@example.com
 dependencies:
   - name: mysql
-    version: 9.14.2
+    version: 11.1.2
     repository: https://charts.bitnami.com/bitnami
     condition: mysql.enabled
   - name: keycloak
-    version: 7.0.0
+    version: 21.4.1
     repository: https://charts.bitnami.com/bitnami
     condition: keycloak.enabled
   - name: oauth2-proxy
-    version: 6.35.0
+    alias: oauth2Proxy
+    version: 7.8.3
     repository: https://oauth2-proxy.github.io/manifests
-    condition: oauth2-proxy.enabled
+    condition: oauth2Proxy.enabled

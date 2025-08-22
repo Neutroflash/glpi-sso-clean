@@ -1,4 +1,5 @@
-{{- if and .Values.oauth2-proxy.enabled .Values.oauth2-proxy.ingress.enabled }}
+{{- $v := .Values -}}
+  {{- if and (index $v "oauth2-proxy" "enabled") (index $v "oauth2-proxy" "ingress" "enabled") }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,32 +8,33 @@ metadata:
     {{- include "glpi-sso.labels" . | nindent 4 }}
     app.kubernetes.io/component: oauth2-proxy
 spec:
-  {{- if .Values.oauth2-proxy.ingress.className }}
-  ingressClassName: {{ .Values.oauth2-proxy.ingress.className }}
-  {{- end }}
-  {{- if .Values.oauth2-proxy.ingress.tls }}
-  tls:
-    {{- range .Values.oauth2-proxy.ingress.tls }}
-    - hosts:
-        {{- range .hosts }}
-        - {{ . | quote }}
-        {{- end }}
-      secretName: {{ .secretName }}
+  {{- $ing := (index $v "oauth2-proxy" "ingress") -}}
+    {{- with (index $ing "className") }}
+    ingressClassName: {{ . }}
     {{- end }}
-  {{- end }}
-  rules:
-    {{- range .Values.oauth2-proxy.ingress.hosts }}
-    - host: {{ .host | quote }}
-      http:
-        paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            pathType: {{ .pathType }}
-            backend:
-              service:
-                name: {{ include "glpi-sso.fullname" $ }}-oauth2-proxy
-                port:
-                  number: {{ $.Values.oauth2-proxy.service.port }}
+    {{- if (index $ing "tls") }}
+    tls:
+      {{- range (index $ing "tls") }}
+      - hosts:
+          {{- range .hosts }}
+          - {{ . | quote }}
           {{- end }}
+        secretName: {{ .secretName }}
+      {{- end }}
     {{- end }}
-{{- end }}
+    rules:
+      {{- range (index $ing "hosts") }}
+      - host: {{ .host | quote }}
+        http:
+          paths:
+            {{- range .paths }}
+            - path: {{ .path | quote }}
+              pathType: {{ .pathType | default "Prefix" }}
+              backend:
+                service:
+                  name: {{ include "glpi-sso.fullname" $ }}-oauth2-proxy
+                  port:
+                    number: {{ (index $v "oauth2-proxy" "service" "port") | default 4180 }}
+            {{- end }}
+      {{- end }}
+  {{- end }}
